@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import logoImage from "../assets/logo.png";
 
 const sectionBox = {
   background: "#fff",
@@ -236,7 +237,7 @@ export default function FeedbackForm() {
           alignItems: "center",
           justifyContent: "center"
         }}>
-          <img src="/logo.png" alt="Gogo's Logo" style={{ width: 100, height: 100, objectFit: 'contain', display: 'block' }} />
+          <img src={logoImage} alt="Gogo's Logo" style={{ width: 100, height: 100, objectFit: 'contain', display: 'block' }} />
         </div>
         <div style={{ color: "#000000ff", fontWeight: 700, fontSize: 18, marginTop: 8 }}>GOGOS</div>
         <div style={{ fontSize: 32, fontWeight: 700, margin: '8px 0' }}>How was your <span style={{ color: "#000000ff" }}>experience?</span></div>
