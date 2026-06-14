@@ -23,7 +23,7 @@ const inputStyle = {
 };
 const buttonStyle = {
   width: "100%",
-  background: "#7a1e2b",
+  background: "#000000ff",
   color: "#fff",
   fontWeight: 700,
   border: 0,
@@ -44,33 +44,63 @@ const whatDidYouLoveOptions = [
   "Burger", "Fries", "Drinks", "Service", "Vibe"
 ];
 
-const ratingOptions = [
-  { value: 1, label: "Very Bad" },
-  { value: 2, label: "Bad" },
-  { value: 3, label: "Average" },
-  { value: 4, label: "Good" },
-  { value: 5, label: "Excellent" }
-];
+const getRatingColor = rating => {
+  if (rating <= 2) return "#ff4d4f";
+  if (rating === 3) return "#ff9800";
+  if (rating === 4) return "#8bc34a";
+  return "#2e7d32";
+};
+
+function StarRating({ value, onChange }) {
+  const selectedValue = Number(value);
+
+  return (
+    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      {[1, 2, 3, 4, 5].map(starValue => (
+        <button
+          key={starValue}
+          type="button"
+          onClick={() => onChange(starValue)}
+          style={{
+            border: "none",
+            background: "transparent",
+            fontSize: 28,
+            cursor: "pointer",
+            padding: 0,
+            lineHeight: 1,
+            color: starValue <= selectedValue ? getRatingColor(starValue) : "#cfcfcf"
+          }}
+          aria-label={`${starValue} star${starValue > 1 ? "s" : ""}`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const getInitialFormState = () => ({
+  name: "",
+  email: "",
+  phone: "",
+  overallExperience: "",
+  likedMost: [],
+  ratings: {
+    foodQuality: "",
+    service: "",
+    ambiance: "",
+    environment: ""
+  },
+  waiterDetails: [{ servedBy: "", rateWaiter: "" }],
+  whatWentWrong: [],
+  whatWentWrongDetails: "",
+  whatDidYouLove: [],
+  nextBranchLoc: "",
+  additionalComments: ""
+});
 
 export default function FeedbackForm() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    overallExperience: "",
-    likedMost: [],
-    ratings: {
-      foodQuality: "",
-      service: "",
-      ambiance: "",
-      environment: ""
-    },
-    waiterDetails: [{ servedBy: "", rateWaiter: "" }],
-    whatWentWrong: [],
-    whatWentWrongDetails: "",
-    whatDidYouLove: [],
-    additionalComments: ""
-  });
+  const [form, setForm] = useState(getInitialFormState);
   const [waiters, setWaiters] = useState([]);
   const [showWhatWentWrong, setShowWhatWentWrong] = useState(false);
   const [showWhatDidYouLove, setShowWhatDidYouLove] = useState(false);
@@ -142,6 +172,24 @@ export default function FeedbackForm() {
 
   const handleSubmit = async e => {
     e.preventDefault();
+
+    const hasAllSectionRatings = Object.values(form.ratings).every(rating => {
+      const numericRating = Number(rating);
+      return numericRating >= 1 && numericRating <= 5;
+    });
+
+    if (!Number(form.overallExperience) || !hasAllSectionRatings || !Number(form.waiterDetails[0].rateWaiter)) {
+      alert("Please provide all star ratings before submitting.");
+      return;
+    }
+
+    if (!form.waiterDetails[0].servedBy) {
+      alert("Please select your waiter before submitting.");
+      return;
+    }
+
+    const trimmedNextBranchLoc = form.nextBranchLoc.trim();
+
     const payload = {
       ...form,
       overallExperience: Number(form.overallExperience),
@@ -158,29 +206,40 @@ export default function FeedbackForm() {
       whatWentWrong: showWhatWentWrong ? form.whatWentWrong : undefined,
       whatWentWrongDetails: showWhatWentWrong && form.whatWentWrong.length > 0 ? form.whatWentWrongDetails : undefined,
       whatDidYouLove: showWhatDidYouLove ? form.whatDidYouLove : undefined,
+      ...(trimmedNextBranchLoc ? { nextBranchLoc: trimmedNextBranchLoc } : {}),
       additionalComments: form.additionalComments
     };
-    await axios.post(`${BASE_URL}/api/reviews`, payload);
-    alert("Thank you for your feedback!");
+
+    try {
+      await axios.post(`${BASE_URL}/api/reviews`, payload);
+      alert("Thank you for your feedback!");
+      setForm(getInitialFormState());
+      setShowWhatWentWrong(false);
+      setShowWhatDidYouLove(false);
+    } catch (error) {
+      const serverMessage = error?.response?.data?.message;
+      const fallbackMessage = "Could not submit feedback. Please check your inputs and try again.";
+      alert(serverMessage || fallbackMessage);
+    }
   };
 
   return (
     <div style={{ maxWidth: 700, margin: "40px auto", padding: 16, fontFamily: 'Google Sans, sans-serif', background: '#faf7f8' }}>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{
-          width: 80,
-          height: 80,
-          background: "#7a1e2b",
+          width: 100,
+          height: 100,
+          background: "#ffffffff",
           borderRadius: "50%",
           margin: "0 auto 12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center"
         }}>
-          <img src="/logo.png" alt="Gogo's Logo" style={{ width: 60, height: 60, objectFit: 'contain', display: 'block' }} />
+          <img src="/logo.png" alt="Gogo's Logo" style={{ width: 100, height: 100, objectFit: 'contain', display: 'block' }} />
         </div>
-        <div style={{ color: "#7a1e2b", fontWeight: 700, fontSize: 18, marginTop: 8 }}>GOGO'S RESTAURANT</div>
-        <div style={{ fontSize: 32, fontWeight: 700, margin: '8px 0' }}>How was your <span style={{ color: "#7a1e2b" }}>experience?</span></div>
+        <div style={{ color: "#000000ff", fontWeight: 700, fontSize: 18, marginTop: 8 }}>GOGOS</div>
+        <div style={{ fontSize: 32, fontWeight: 700, margin: '8px 0' }}>How was your <span style={{ color: "#000000ff" }}>experience?</span></div>
         <div style={{ color: "#888", fontSize: 16 }}>Your feedback helps us serve you better. It takes less than two minutes.</div>
       </div>
       <form onSubmit={handleSubmit}>
@@ -196,20 +255,18 @@ export default function FeedbackForm() {
           <div style={labelStyle}>Your visit</div>
           <div style={{ marginBottom: 16 }}>
             <label style={fieldLabel}>Overall Experience *</label>
-            <select name="overallExperience" value={form.overallExperience} onChange={handleChange} required style={inputStyle}>
-              <option value="">Select a rating...</option>
-              {ratingOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+            <StarRating
+              value={form.overallExperience}
+              onChange={value => setForm(prev => ({ ...prev, overallExperience: value }))}
+            />
           </div>
           <div style={fieldLabel}>What did you like most?</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
             {["Food quality", "Service", "Ambiance", "Environment"].map(opt => (
               <button type="button" key={opt} onClick={() => handleLikedMost(opt)} style={{
-                background: form.likedMost.includes(opt) ? "#7a1e2b" : "#fff",
-                color: form.likedMost.includes(opt) ? "#fff" : "#7a1e2b",
-                border: "1px solid #7a1e2b", borderRadius: 20, padding: "4px 16px", cursor: "pointer", fontFamily: 'Google Sans, sans-serif', fontWeight: 500, marginBottom: 4
+                background: form.likedMost.includes(opt) ? "#000000ff" : "#fff",
+                color: form.likedMost.includes(opt) ? "#fff" : "#000000ff",
+                border: "1px solid #000000ff", borderRadius: 20, padding: "4px 16px", cursor: "pointer", fontFamily: 'Google Sans, sans-serif', fontWeight: 500, marginBottom: 4
               }}>{opt}</button>
             ))}
           </div>
@@ -218,17 +275,10 @@ export default function FeedbackForm() {
             {["foodQuality", "service", "ambiance", "environment"].map(field => (
               <div key={field} style={{ flex: 1, minWidth: 120 }}>
                 <label style={fieldLabel}>{field.replace(/([A-Z])/g, " $1").replace(/^./, str => str.toUpperCase())}</label>
-                <select
+                <StarRating
                   value={form.ratings[field]}
-                  onChange={e => handleRatingChange(field, e.target.value)}
-                  required
-                  style={inputStyle}
-                >
-                  <option value="">Choose...</option>
-                  {ratingOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
+                  onChange={value => handleRatingChange(field, value)}
+                />
               </div>
             ))}
           </div>
@@ -253,17 +303,10 @@ export default function FeedbackForm() {
             </div>
             <div style={{ flex: 1, minWidth: 120 }}>
               <label style={fieldLabel}>Rate Waiter *</label>
-              <select
+              <StarRating
                 value={form.waiterDetails[0].rateWaiter}
-                onChange={e => handleWaiterRatingChange(e.target.value)}
-                required
-                style={inputStyle}
-              >
-                <option value="">Choose...</option>
-                {ratingOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+                onChange={value => handleWaiterRatingChange(value)}
+              />
             </div>
           </div>
         </div>
@@ -310,6 +353,17 @@ export default function FeedbackForm() {
           </div>
         )}
         <div style={sectionBox}>
+          <div style={labelStyle}>Where should be our next location?</div>
+          <input
+            placeholder="Suggest a location"
+            name="nextBranchLoc"
+            value={form.nextBranchLoc}
+            onChange={handleChange}
+            style={inputStyle}
+          />
+        </div>
+        <div style={sectionBox}>
+          <div style={labelStyle}>Anything else?</div>
           <textarea
             placeholder="Anything else you'd like to share?"
             name="additionalComments"
@@ -323,7 +377,7 @@ export default function FeedbackForm() {
         </button>
       </form>
       <div style={{ textAlign: "center", color: "#888", marginTop: 32, fontFamily: 'Google Sans, sans-serif' }}>
-        Made with <span style={{ color: "#7a1e2b" }}>♥</span> for Gogo's guests
+        Made with <span style={{ color: "#000000ff" }}>♥</span> for Gogo's guests
       </div>
     </div>
   );
